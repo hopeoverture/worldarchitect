@@ -29,7 +29,7 @@ import HistoryForm from './components/forms/HistoryForm';
 import MonsterForm from './components/forms/MonsterForm';
 
 function App() {
-  const { user, loading: authLoading, signInWithEmail, signUpWithEmail, signOut } = useAuth();
+  const { user, loading: authLoading, signInWithEmail, signUpWithEmail, resetPassword, signOut } = useAuth();
   const { worlds, currentWorld, setCurrentWorld, createWorld, deleteWorld, updateWorld } = useWorlds();
   // keep hook for side-effects (e.g. body class) but avoid unused variable
   useDarkMode();
@@ -104,7 +104,7 @@ function App() {
   };
 
   if (!user) {
-    return <LoginScreen onLogin={handleLogin} loading={authLoading2} />;
+    return <LoginScreen onLogin={handleLogin} loading={authLoading2} onResetPassword={resetPassword} />;
   }
 
   if (!currentWorld) {
@@ -138,30 +138,47 @@ function App() {
 
   const handleSaveComponent = async (type: string, data: any) => {
     try {
+      // If the form included linked component IDs, resolve them to full objects
+      const resolveLinkedComponents = (ids: any) => {
+        if (!ids || !Array.isArray(ids)) return [];
+        const pool = Object.values(allComponents).flat() as any[];
+        return ids
+          .map((id: string) => pool.find((c) => c && c.id === id))
+          .filter(Boolean);
+      };
+
+      const payload = {
+        ...data,
+        linked_components_content: resolveLinkedComponents((data && (data as any).linked_components) || [])
+      };
+
+      // Log payload for debugging so we can confirm linked components content is included
+      logger.debug('Creating component payload:', { type, payload });
+
       switch (type) {
         case 'regions':
-          await createRegion(data);
+          await createRegion(payload);
           break;
         case 'governments':
-          await createGovernment(data);
+          await createGovernment(payload);
           break;
         case 'characters':
-          await createCharacter(data);
+          await createCharacter(payload);
           break;
         case 'geographical':
-          await createGeographical(data);
+          await createGeographical(payload);
           break;
         case 'sites':
-          await createSite(data);
+          await createSite(payload);
           break;
         case 'adventures':
-          await createAdventure(data);
+          await createAdventure(payload);
           break;
         case 'history':
-          await createHistory(data);
+          await createHistory(payload);
           break;
         case 'monsters':
-          await createMonster(data);
+          await createMonster(payload);
           break;
         default:
       logger.warn(`Component type ${type} not implemented yet`);
@@ -347,6 +364,7 @@ function App() {
         }}
         onLogout={signOut}
         onSettings={() => setShowSettings(true)}
+        onDashboard={() => setActiveComponent('dashboard')}
       />
       
       <div className="flex">

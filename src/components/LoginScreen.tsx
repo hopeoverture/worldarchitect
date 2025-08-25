@@ -5,9 +5,10 @@ import { Globe, Sparkles, Map, Users, Sword } from 'lucide-react';
 interface LoginScreenProps {
   onLogin: (email: string, password: string, isSignUp: boolean) => void;
   loading?: boolean;
+  onResetPassword?: (email: string) => Promise<void>;
 }
 
-export default function LoginScreen({ onLogin, loading }: LoginScreenProps) {
+export default function LoginScreen({ onLogin, loading, onResetPassword }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -31,6 +32,21 @@ export default function LoginScreen({ onLogin, loading }: LoginScreenProps) {
       await onLogin(email, password, isSignUp);
     } catch (err: any) {
       setError(err.message || 'Authentication failed');
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      setError('Please enter your email address to reset your password');
+      return;
+    }
+
+    try {
+      setError(null);
+      if (onResetPassword) await onResetPassword(email);
+      setError('Password reset email sent. Check your inbox.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to send password reset email');
     }
   };
 
@@ -131,6 +147,17 @@ export default function LoginScreen({ onLogin, loading }: LoginScreenProps) {
               : "Don't have an account? Create one"
             }
           </button>
+            {!isSignUp && (
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={handleResetPassword}
+                  className="text-sm text-purple-200 hover:text-white"
+                >
+                  Forgot password?
+                </button>
+              </div>
+            )}
         </div>
 
         <p className="text-center text-purple-200 text-sm mt-6">

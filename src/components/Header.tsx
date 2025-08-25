@@ -1,4 +1,3 @@
-import React from 'react';
 import { Globe, User, LogOut, Settings } from 'lucide-react';
 
 interface HeaderProps {
@@ -8,9 +7,10 @@ interface HeaderProps {
   } | null;
   onLogout?: () => void;
   onSettings?: () => void;
+  onDashboard?: () => void;
 }
 
-export default function Header({ user, onLogout, onSettings }: HeaderProps) {
+export default function Header({ user, onLogout, onSettings, onDashboard }: HeaderProps) {
   return (
     <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -19,9 +19,17 @@ export default function Header({ user, onLogout, onSettings }: HeaderProps) {
             <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-lg flex items-center justify-center">
               <Globe className="w-6 h-6 text-white" />
             </div>
-            <div>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={onDashboard}
+                className="text-sm font-semibold text-white bg-purple-700 hover:bg-purple-800 px-3 py-1.5 rounded-md shadow"
+              >
+                Dashboard
+              </button>
+              <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">World Architect</h1>
               <p className="text-sm text-gray-500 dark:text-gray-400">AI-Powered World Builder</p>
+              </div>
             </div>
           </div>
           
