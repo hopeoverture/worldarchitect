@@ -63,27 +63,41 @@ export function useAuth() {
   };
 
   const signInWithEmail = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    // Return and log the full response for debugging
+    const res = await supabase.auth.signInWithPassword({
       email,
       password
     });
-    if (error) throw error;
+    logger.debug('signInWithEmail response', res);
+    // Don't throw here so callers (UI) can inspect the full response for debugging
+    if ((res as any).error) {
+      logger.debug('signInWithEmail error object', (res as any).error);
+    }
+    return res;
   };
 
   const signUpWithEmail = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
+    const res = await supabase.auth.signUp({
       email,
       password
     });
-    if (error) throw error;
+    logger.debug('signUpWithEmail response', res);
+    if ((res as any).error) {
+      logger.debug('signUpWithEmail error object', (res as any).error);
+    }
+    return res;
   };
   
   const resetPassword = async (email: string) => {
     // Supabase will send a password reset email to the user
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const res = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.origin
     });
-    if (error) throw error;
+    logger.debug('resetPassword response', res);
+    if ((res as any).error) {
+      logger.debug('resetPassword error object', (res as any).error);
+    }
+    return res;
   };
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();

@@ -92,9 +92,11 @@ function App() {
     setAuthLoading2(true);
     try {
       if (isSignUp) {
-        await signUpWithEmail(email, password);
+        const res = await signUpWithEmail(email, password);
+        return res;
       } else {
-        await signInWithEmail(email, password);
+        const res = await signInWithEmail(email, password);
+        return res;
       }
     } catch (error) {
       throw error;
@@ -104,7 +106,15 @@ function App() {
   };
 
   if (!user) {
-    return <LoginScreen onLogin={handleLogin} loading={authLoading2} onResetPassword={resetPassword} />;
+    return (
+      <LoginScreen
+        onLogin={handleLogin}
+        loading={authLoading2}
+        onResetPassword={async (email: string) => {
+          await resetPassword(email);
+        }}
+      />
+    );
   }
 
   if (!currentWorld) {

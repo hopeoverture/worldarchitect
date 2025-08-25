@@ -13,6 +13,7 @@ export default function LoginScreen({ onLogin, loading, onResetPassword }: Login
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastResponse, setLastResponse] = useState<any | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +30,19 @@ export default function LoginScreen({ onLogin, loading, onResetPassword }: Login
     }
 
     try {
-      await onLogin(email, password, isSignUp);
+      const res = await onLogin(email, password, isSignUp as boolean);
+      setLastResponse(res ?? null);
+      // If Supabase returned an error object, show it in the UI
+      const maybeError = (res as any)?.error || (res as any)?.data?.error;
+      if (maybeError) {
+        setError(maybeError?.message || JSON.stringify(maybeError));
+        return;
+      }
+      // Some signUp flows return user=null and a message; detect common patterns
+      const userInData = (res as any)?.data?.user || (res as any)?.user;
+      if (!userInData && !isSignUp) {
+        setError('Authentication failed (no user returned)');
+      }
     } catch (err: any) {
       setError(err.message || 'Authentication failed');
     }
@@ -43,7 +56,10 @@ export default function LoginScreen({ onLogin, loading, onResetPassword }: Login
 
     try {
       setError(null);
-      if (onResetPassword) await onResetPassword(email);
+      if (onResetPassword) {
+        const res = await onResetPassword(email);
+        setLastResponse(res ?? null);
+      }
       setError('Password reset email sent. Check your inbox.');
     } catch (err: any) {
       setError(err.message || 'Failed to send password reset email');
@@ -113,6 +129,13 @@ export default function LoginScreen({ onLogin, loading, onResetPassword }: Login
           {error && (
             <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3">
               <p className="text-red-200 text-sm">{error}</p>
+            </div>
+          )}
+
+          {lastResponse && (
+            <div className="mt-3 bg-gray-900 text-white p-3 rounded-lg text-xs overflow-auto">
+              <div className="font-semibold mb-2">Debug response (dev):</div>
+              <pre className="whitespace-pre-wrap">{JSON.stringify(lastResponse, null, 2)}</pre>
             </div>
           )}
 
