@@ -113,7 +113,7 @@ export const worldService = {
 };
 
 export const componentService = {
-  async getComponents(tableName: string, worldId: string) {
+  async getComponents<T = any>(tableName: string, worldId: string): Promise<T[]> {
     const { data, error } = await supabase
       .from(tableName)
       .select('*')
@@ -121,21 +121,21 @@ export const componentService = {
       .order('created_at', { ascending: false });
     
     if (error) throw error;
-    return data;
+    return (data as T[]) || [];
   },
 
-  async createComponent(tableName: string, componentData: any, worldId: string) {
+  async createComponent<T = any>(tableName: string, componentData: Partial<T>, worldId: string): Promise<T> {
     const { data, error } = await supabase
       .from(tableName)
-      .insert({ ...componentData, world_id: worldId })
+      .insert({ ...(componentData as object), world_id: worldId })
       .select()
       .single();
     
     if (error) throw error;
-    return data;
+    return data as T;
   },
 
-  async updateComponent(tableName: string, id: string, componentData: any) {
+  async updateComponent<T = any>(tableName: string, id: string, componentData: Partial<T>): Promise<T> {
     const { data, error } = await supabase
       .from(tableName)
       .update(componentData)
@@ -144,7 +144,7 @@ export const componentService = {
       .single();
     
     if (error) throw error;
-    return data;
+    return data as T;
   },
 
   async deleteComponent(tableName: string, id: string) {

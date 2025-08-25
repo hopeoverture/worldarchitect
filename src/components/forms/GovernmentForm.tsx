@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { logger } from '../../lib/logger';
 import { Sparkles, Save, X, Link } from 'lucide-react';
 import { useComponents } from '../../hooks/useComponents';
 import { generateGovernmentLeadership, generateGovernmentDescription } from '../../lib/openai';
@@ -22,6 +23,7 @@ export default function GovernmentForm({ worldId, worldContext = '', onClose, on
   });
   const [loading, setLoading] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   const { components: regions } = useComponents('regions', worldId);
 
@@ -41,62 +43,45 @@ export default function GovernmentForm({ worldId, worldContext = '', onClose, on
       };
       await onSave(cleanedData);
     } catch (error) {
-      console.error('Failed to save government:', error);
+  logger.error('Failed to save government:', error);
     } finally {
       setLoading(false);
     }
   };
-
   const generateWithAI = async (field: string) => {
     if (!formData.name || !formData.government_type) {
-      alert('Please enter a name and select government type first');
+      setError('Please enter a name and select government type first');
       return;
     }
 
     setLoading(true);
     try {
-      let generatedContent: string;
-      
-      if (field === 'leadership') {
-        generatedContent = await generateGovernmentLeadership({
-          name: formData.name,
-          government_type: formData.government_type,
-          linked_region: formData.linked_region,
-          linked_components: formData.linked_components,
-          world_context: worldContext
-        });
-      } else {
-        generatedContent = await generateGovernmentDescription({
-          name: formData.name,
-          government_type: formData.government_type,
-          linked_region: formData.linked_region,
-          linked_components: formData.linked_components,
-          world_context: worldContext
-        });
-      }
-      
-      setFormData(prev => ({ ...prev, [field]: generatedContent }));
+      const generated = field === 'leadership'
+        ? await generateGovernmentLeadership({
+            name: formData.name,
+            government_type: formData.government_type,
+            linked_region: formData.linked_region,
+            linked_components: formData.linked_components,
+            world_context: worldContext
+          })
+        : await generateGovernmentDescription({
+            name: formData.name,
+            government_type: formData.government_type,
+            linked_region: formData.linked_region,
+            linked_components: formData.linked_components,
+            world_context: worldContext
+          });
+
+      setFormData(prev => ({ ...prev, [field]: generated }));
+      setError(null);
     } catch (error) {
-      console.error(`Failed to generate ${field}:`, error);
-      alert(`Failed to generate ${field}. Please try again.`);
+      logger.error(`Failed to generate ${field}:`, error);
+      setError(`Failed to generate ${field}. Please try again.`);
     } finally {
       setLoading(false);
     }
   };
 
-  const generateWithAIOld = async (field: string) => {
-    if (field === 'leadership') {
-      setFormData(prev => ({
-        ...prev,
-        leadership: 'AI-generated leader would appear here...'
-      }));
-    } else if (field === 'description') {
-      setFormData(prev => ({
-        ...prev,
-        description: 'AI-generated description would appear here...'
-      }));
-    }
-  };
 
   const handleComponentLink = (component: any) => {
     setFormData(prev => ({
@@ -111,7 +96,12 @@ export default function GovernmentForm({ worldId, worldContext = '', onClose, on
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900">Create New Government</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Create New Government</h2>
+            {error && (
+              <div className="mb-3 p-2 bg-red-50 text-red-700 rounded">
+                {error}
+              </div>
+            )}
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"

@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { logger } from './logger';
 
 export interface GenerateContentRequest {
   type: 'world_name' | 'world_description' | 'region_description' | 'government_leadership' | 'government_description' | 'character_description' | 'geographical_description' | 'site_description' | 'adventure_description' | 'adventure_objectives' | 'adventure_rewards' | 'history_description' | 'monster_description' | 'monster_abilities';
@@ -7,33 +8,57 @@ export interface GenerateContentRequest {
 
 export async function generateContent(request: GenerateContentRequest): Promise<string> {
   try {
-    console.log('Calling Supabase function with request:', request);
-    
+    logger.debug('Calling Supabase function with request:', request);
+
+    // Ensure we send JSON — supabase client handles serialization but keep explicit for clarity
     const { data, error } = await supabase.functions.invoke('generate-content', {
-      body: request
+      body: JSON.stringify(request)
     });
 
-    console.log('Supabase function response:', { data, error });
+    logger.debug('Supabase function response:', { data, error });
 
     if (error) {
-      console.error('Supabase function error:', error);
-      throw new Error(`Supabase function error: ${error.message || 'Edge Function returned a non-2xx status code'}`);
+      logger.error('Supabase function error:', error);
+      const e: GenerateContentError = {
+        name: 'GenerateContentError',
+        message: error.message || 'Edge Function returned a non-2xx status code',
+        code: (error as any)?.status || 'supabase_error',
+        details: error
+      };
+      throw e;
     }
 
-    if (!data?.content) {
-      console.error('No content in response:', data);
-      throw new Error(`No content received from AI. Response: ${JSON.stringify(data)}`);
+    if (!data || !('content' in data) || !data.content) {
+      logger.error('No content in response or malformed response:', data);
+      const e: GenerateContentError = {
+        name: 'GenerateContentError',
+        message: 'No content received from AI',
+        code: 'no_content',
+        details: data
+      };
+      throw e;
     }
 
-    console.log('Generated content:', data.content);
+    logger.debug('Generated content:', data.content);
     return data.content;
-  } catch (error) {
-    console.error('Content generation error:', error);
-    if (error instanceof Error) {
-      throw error;
+  } catch (err) {
+    logger.error('Content generation error:', err);
+    if ((err as any)?.name === 'GenerateContentError') {
+      throw err;
     }
-    throw new Error(`Content generation failed: ${String(error)}`);
+    const e: GenerateContentError = {
+      name: 'GenerateContentError',
+      message: err instanceof Error ? err.message : String(err),
+      code: 'unknown_error',
+      details: err
+    };
+    throw e;
   }
+}
+
+export interface GenerateContentError extends Error {
+  code: string | number;
+  details?: any;
 }
 
 // Helper functions for specific content types

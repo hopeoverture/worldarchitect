@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { logger } from '../../lib/logger';
 import { Sparkles, Save, X, Link } from 'lucide-react';
 import { generateRegionDescription } from '../../lib/openai';
 import ComponentLinkModal from '../ComponentLinkModal';
@@ -19,6 +20,7 @@ export default function RegionForm({ worldId, worldContext = '', onClose, onSave
   });
   const [loading, setLoading] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const terrainOptions = [
     'forest', 'mountain', 'desert', 'plains', 'swamp', 'tundra', 'coast', 'island'
@@ -30,7 +32,7 @@ export default function RegionForm({ worldId, worldContext = '', onClose, onSave
     try {
       await onSave(formData);
     } catch (error) {
-      console.error('Failed to save region:', error);
+  logger.error('Failed to save region:', error);
     } finally {
       setLoading(false);
     }
@@ -38,7 +40,7 @@ export default function RegionForm({ worldId, worldContext = '', onClose, onSave
 
   const generateWithAI = async () => {
     if (!formData.name || !formData.primary_terrain) {
-      alert('Please enter a name and select terrain type first');
+      setError('Please enter a name and select terrain type first');
       return;
     }
 
@@ -51,10 +53,10 @@ export default function RegionForm({ worldId, worldContext = '', onClose, onSave
         world_context: worldContext
       });
       
-      setFormData(prev => ({ ...prev, description: generatedDescription }));
+    setFormData(prev => ({ ...prev, description: generatedDescription }));
     } catch (error) {
-      console.error('Failed to generate description:', error);
-      alert('Failed to generate description. Please try again.');
+  logger.error('Failed to generate description:', error);
+    setError('Failed to generate description. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -82,6 +84,11 @@ export default function RegionForm({ worldId, worldContext = '', onClose, onSave
           </button>
         </div>
 
+          {error && (
+            <div className="mb-3 p-2 bg-red-50 text-red-700 rounded">
+              {error}
+            </div>
+          )}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">

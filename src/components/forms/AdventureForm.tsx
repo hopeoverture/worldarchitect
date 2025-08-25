@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
+import { logger } from '../../lib/logger';
 import { Sparkles, Save, X, Link } from 'lucide-react';
-import { useComponents } from '../../hooks/useComponents';
 import { generateAdventureDescription, generateAdventureObjectives, generateAdventureRewards } from '../../lib/openai';
 import ComponentLinkModal from '../ComponentLinkModal';
 
@@ -11,8 +11,17 @@ interface AdventureFormProps {
   onSave: (data: any) => void;
 }
 
+interface AdventureFormData {
+  name: string;
+  difficulty: string;
+  linked_components: string[]; // or number[] if your IDs are numbers
+  description: string;
+  objectives: string;
+  rewards: string;
+}
+
 export default function AdventureForm({ worldId, worldContext = '', onClose, onSave }: AdventureFormProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<AdventureFormData>({
     name: '',
     difficulty: '',
     linked_components: [],
@@ -24,10 +33,7 @@ export default function AdventureForm({ worldId, worldContext = '', onClose, onS
   const [error, setError] = useState('');
   const [showLinkModal, setShowLinkModal] = useState(false);
   
-  const { components: regions } = useComponents('regions', worldId);
-  const { components: characters } = useComponents('characters', worldId);
-  const { components: sites } = useComponents('sites', worldId);
-  const { components: settlements } = useComponents('settlements', worldId);
+  // Removed unused settlements variable
 
   const difficultyOptions = [
     'easy', 'medium', 'hard', 'epic'
@@ -39,7 +45,7 @@ export default function AdventureForm({ worldId, worldContext = '', onClose, onS
     try {
       await onSave(formData);
     } catch (error) {
-      console.error('Failed to save adventure:', error);
+  logger.error('Failed to save adventure:', error);
     } finally {
       setLoading(false);
     }
@@ -87,7 +93,7 @@ export default function AdventureForm({ worldId, worldContext = '', onClose, onS
       
       setFormData(prev => ({ ...prev, [field]: generatedContent }));
     } catch (error) {
-      console.error(`Failed to generate ${field}:`, error);
+  logger.error(`Failed to generate ${field}:`, error);
       setError(error instanceof Error ? error.message : `Failed to generate ${field}. Please try again.`);
     } finally {
       setLoading(false);

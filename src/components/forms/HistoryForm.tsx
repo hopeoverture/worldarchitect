@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { logger } from '../../lib/logger';
 import { Sparkles, Save, X, Link } from 'lucide-react';
 import { generateHistoryDescription } from '../../lib/openai';
 import ComponentLinkModal from '../ComponentLinkModal';
@@ -27,7 +28,7 @@ export default function HistoryForm({ worldId, worldContext = '', onClose, onSav
     try {
       await onSave(formData);
     } catch (error) {
-      console.error('Failed to save history:', error);
+  logger.error('Failed to save history:', error);
     } finally {
       setLoading(false);
     }
@@ -51,7 +52,7 @@ export default function HistoryForm({ worldId, worldContext = '', onClose, onSav
       
       setFormData(prev => ({ ...prev, description: generatedDescription }));
     } catch (error) {
-      console.error('Failed to generate description:', error);
+  logger.error('Failed to generate description:', error);
       setError(error instanceof Error ? error.message : 'Failed to generate description. Please try again.');
     } finally {
       setLoading(false);

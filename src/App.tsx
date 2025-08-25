@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
+import { logger } from './lib/logger';
 import { useAuth } from './hooks/useAuth';
 import { useWorlds } from './hooks/useWorlds';
 import { useComponents } from './hooks/useComponents';
@@ -9,7 +10,15 @@ import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import ComponentList from './components/ComponentList';
-import Settings from './components/Settings';
+// Load Settings lazily and support either a default export or a named export 'Settings'
+const SettingsLazy = lazy(() =>
+  import('./components/Settings').then((mod) => ({
+    default: (props: any) =>
+      (mod as any).Settings
+        ? React.createElement((mod as any).Settings, props)
+        : React.createElement((mod as any).default ?? mod, props)
+  }))
+);
 import RegionForm from './components/forms/RegionForm';
 import GovernmentForm from './components/forms/GovernmentForm';
 import CharacterForm from './components/forms/CharacterForm';
@@ -22,7 +31,8 @@ import MonsterForm from './components/forms/MonsterForm';
 function App() {
   const { user, loading: authLoading, signInWithEmail, signUpWithEmail, signOut } = useAuth();
   const { worlds, currentWorld, setCurrentWorld, createWorld, deleteWorld, updateWorld } = useWorlds();
-  const { isDarkMode } = useDarkMode();
+  // keep hook for side-effects (e.g. body class) but avoid unused variable
+  useDarkMode();
   const [activeComponent, setActiveComponent] = useState('dashboard');
   const [showForm, setShowForm] = useState<string | null>(null);
   const [authLoading2, setAuthLoading2] = useState(false);
@@ -37,7 +47,7 @@ function App() {
   const { components: sites, createComponent: createSite, deleteComponent: deleteSite } = useComponents('sites', currentWorld?.id || null);
   const { components: adventures, createComponent: createAdventure, deleteComponent: deleteAdventure } = useComponents('adventures', currentWorld?.id || null);
   const { components: history, createComponent: createHistory, deleteComponent: deleteHistory } = useComponents('history', currentWorld?.id || null);
-  const { components: monsters, createComponent: createMonster, deleteComponent: deleteMonster } = useComponents('monsters', currentWorld?.id || null);
+  const { components: monsters, createComponent: createMonster } = useComponents('monsters', currentWorld?.id || null);
   const { components: items } = useComponents('items', currentWorld?.id || null);
   const { components: settlements } = useComponents('settlements', currentWorld?.id || null);
 
@@ -154,10 +164,10 @@ function App() {
           await createMonster(data);
           break;
         default:
-          console.warn(`Component type ${type} not implemented yet`);
+      logger.warn(`Component type ${type} not implemented yet`);
       }
     } catch (error) {
-      console.error('Failed to save component:', error);
+  logger.error('Failed to save component:', error);
       throw error;
     }
     setShowForm(null);
@@ -187,7 +197,7 @@ function App() {
         deleteHistory(id);
         break;
       default:
-        console.warn(`Delete for component type ${type} not implemented yet`);
+  logger.warn(`Delete for component type ${type} not implemented yet`);
     }
   };
 
@@ -231,7 +241,7 @@ function App() {
             worldId={currentWorld.id}
             worldContext={currentWorld.general_description_style || ''}
             onClose={() => setShowForm(null)}
-            onSave={(data) => handleSaveComponent('regions', data)}
+            onSave={(data: unknown) => handleSaveComponent('regions', data)}
           />
         );
       case 'governments':
@@ -240,7 +250,7 @@ function App() {
             worldId={currentWorld.id}
             worldContext={currentWorld.general_description_style || ''}
             onClose={() => setShowForm(null)}
-            onSave={(data) => handleSaveComponent('governments', data)}
+            onSave={(data: unknown) => handleSaveComponent('governments', data)}
           />
         );
       case 'characters':
@@ -249,7 +259,7 @@ function App() {
             worldId={currentWorld.id}
             worldContext={currentWorld.general_description_style || ''}
             onClose={() => setShowForm(null)}
-            onSave={(data) => handleSaveComponent('characters', data)}
+            onSave={(data: unknown) => handleSaveComponent('characters', data)}
           />
         );
       case 'geographical':
@@ -258,7 +268,7 @@ function App() {
             worldId={currentWorld.id}
             worldContext={currentWorld.general_description_style || ''}
             onClose={() => setShowForm(null)}
-            onSave={(data) => handleSaveComponent('geographical', data)}
+            onSave={(data: unknown) => handleSaveComponent('geographical', data)}
           />
         );
       case 'sites':
@@ -267,7 +277,7 @@ function App() {
             worldId={currentWorld.id}
             worldContext={currentWorld.general_description_style || ''}
             onClose={() => setShowForm(null)}
-            onSave={(data) => handleSaveComponent('sites', data)}
+            onSave={(data: unknown) => handleSaveComponent('sites', data)}
           />
         );
       case 'adventures':
@@ -276,7 +286,7 @@ function App() {
             worldId={currentWorld.id}
             worldContext={currentWorld.general_description_style || ''}
             onClose={() => setShowForm(null)}
-            onSave={(data) => handleSaveComponent('adventures', data)}
+            onSave={(data: unknown) => handleSaveComponent('adventures', data)}
           />
         );
       case 'history':
@@ -285,7 +295,7 @@ function App() {
             worldId={currentWorld.id}
             worldContext={currentWorld.general_description_style || ''}
             onClose={() => setShowForm(null)}
-            onSave={(data) => handleSaveComponent('history', data)}
+            onSave={(data: unknown) => handleSaveComponent('history', data)}
           />
         );
       case 'monsters':
@@ -321,7 +331,7 @@ function App() {
       <ComponentList
         title={getComponentTitle(activeComponent)}
         components={allComponents[activeComponent as keyof typeof allComponents] || []}
-        onEdit={(id) => console.log('Edit', id)}
+        onEdit={(id) => logger.debug('Edit', id)}
         onDelete={(id) => handleDeleteComponent(activeComponent, id)}
         emptyMessage={getEmptyMessage(activeComponent)}
       />
@@ -355,7 +365,9 @@ function App() {
       {showForm && renderForm()}
       
       {showSettings && (
-        <Settings onClose={() => setShowSettings(false)} />
+        <Suspense fallback={<div className="fixed inset-0 flex items-center justify-center">Loading...</div>}>
+          <SettingsLazy onClose={() => setShowSettings(false)} />
+        </Suspense>
       )}
       
       {showWorldSelector && (

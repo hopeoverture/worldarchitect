@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { logger } from '../lib/logger';
 import { Globe, Plus, Edit, Trash2, X, Save, Sparkles } from 'lucide-react';
 import { World } from '../types/world';
 import { generateWorldName, generateWorldDescription } from '../lib/openai';
@@ -83,10 +84,20 @@ export default function WorldSelector({
     e.preventDefault();
     if (formData.name.trim()) {
       if (editingWorld) {
-        onWorldEdit(editingWorld.id, formData);
+        onWorldEdit(editingWorld.id, {
+          ...formData,
+          tone: formData.tone as World['tone'],
+          magic_level: formData.magic_level as World['magic_level'],
+          tech_level: formData.tech_level as World['tech_level'],
+        });
         setEditingWorld(null);
       } else {
-        onWorldCreate(formData);
+        onWorldCreate({
+          ...formData,
+          tone: formData.tone as World['tone'],
+          magic_level: formData.magic_level as World['magic_level'],
+          tech_level: formData.tech_level as World['tech_level'],
+        });
       }
       setFormData({
         name: '',
@@ -154,7 +165,7 @@ export default function WorldSelector({
       
       setFormData(prev => ({ ...prev, name: generatedName }));
     } catch (error) {
-      console.error('Failed to generate name:', error);
+  logger.error('Failed to generate name:', error);
       setErrors(prev => ({ 
         ...prev, 
         name: error instanceof Error ? error.message : 'Failed to generate name. Please try again.'
@@ -178,7 +189,7 @@ export default function WorldSelector({
       
       setFormData(prev => ({ ...prev, general_description_style: generatedDescription }));
     } catch (error) {
-      console.error('Failed to generate description:', error);
+  logger.error('Failed to generate description:', error);
       setErrors(prev => ({ 
         ...prev, 
         description: error instanceof Error ? error.message : 'Failed to generate description. Please try again.'

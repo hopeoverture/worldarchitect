@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { logger } from '../../lib/logger';
 import { Sparkles, Save, X, Link } from 'lucide-react';
 import { useComponents } from '../../hooks/useComponents';
 import { generateCharacterDescription } from '../../lib/openai';
@@ -24,6 +25,7 @@ export default function CharacterForm({ worldId, worldContext = '', onClose, onS
   });
   const [loading, setLoading] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   const { components: settlements } = useComponents('settlements', worldId);
 
@@ -45,7 +47,7 @@ export default function CharacterForm({ worldId, worldContext = '', onClose, onS
       };
       await onSave(cleanedData);
     } catch (error) {
-      console.error('Failed to save character:', error);
+  logger.error('Failed to save character:', error);
     } finally {
       setLoading(false);
     }
@@ -53,7 +55,7 @@ export default function CharacterForm({ worldId, worldContext = '', onClose, onS
 
   const generateWithAI = async () => {
     if (!formData.name) {
-      alert('Please enter a character name first');
+      setError('Please enter a character name first');
       return;
     }
 
@@ -70,10 +72,10 @@ export default function CharacterForm({ worldId, worldContext = '', onClose, onS
         world_context: worldContext
       });
       
-      setFormData(prev => ({ ...prev, description: generatedDescription }));
+  setFormData(prev => ({ ...prev, description: generatedDescription }));
     } catch (error) {
-      console.error('Failed to generate description:', error);
-      alert('Failed to generate description. Please try again.');
+  logger.error('Failed to generate description:', error);
+  setError('Failed to generate description. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -106,6 +108,12 @@ export default function CharacterForm({ worldId, worldContext = '', onClose, onS
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
+
+        {error && (
+          <div className="m-6 p-3 bg-red-50 text-red-700 rounded">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

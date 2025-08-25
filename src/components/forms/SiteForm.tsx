@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { logger } from '../../lib/logger';
 import { Sparkles, Save, X, Link } from 'lucide-react';
 import { useComponents } from '../../hooks/useComponents';
 import { generateSiteDescription } from '../../lib/openai';
@@ -44,7 +45,7 @@ export default function SiteForm({ worldId, worldContext = '', onClose, onSave }
       };
       await onSave(cleanedData);
     } catch (error) {
-      console.error('Failed to save site:', error);
+  logger.error('Failed to save site:', error);
     } finally {
       setLoading(false);
     }
@@ -70,7 +71,7 @@ export default function SiteForm({ worldId, worldContext = '', onClose, onSave }
       
       setFormData(prev => ({ ...prev, description: generatedDescription }));
     } catch (error) {
-      console.error('Failed to generate description:', error);
+  logger.error('Failed to generate description:', error);
       setError(error instanceof Error ? error.message : 'Failed to generate description. Please try again.');
     } finally {
       setLoading(false);

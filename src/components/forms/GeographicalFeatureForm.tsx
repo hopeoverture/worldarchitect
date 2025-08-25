@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { logger } from '../../lib/logger';
 import { Sparkles, Save, X, Link } from 'lucide-react';
 import { useComponents } from '../../hooks/useComponents';
 import { generateGeographicalDescription } from '../../lib/openai';
@@ -41,7 +42,7 @@ export default function GeographicalFeatureForm({ worldId, worldContext = '', on
       };
       await onSave(cleanedData);
     } catch (error) {
-      console.error('Failed to save geographical feature:', error);
+  logger.error('Failed to save geographical feature:', error);
     } finally {
       setLoading(false);
     }
@@ -66,7 +67,7 @@ export default function GeographicalFeatureForm({ worldId, worldContext = '', on
       
       setFormData(prev => ({ ...prev, description: generatedDescription }));
     } catch (error) {
-      console.error('Failed to generate description:', error);
+  logger.error('Failed to generate description:', error);
       setError(error instanceof Error ? error.message : 'Failed to generate description. Please try again.');
     } finally {
       setLoading(false);

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { logger } from '../../lib/logger';
 import { Sparkles, Save, X, Link } from 'lucide-react';
 import { useComponents } from '../../hooks/useComponents';
 import { generateMonsterDescription, generateMonsterAbilities } from '../../lib/openai';
@@ -49,7 +50,7 @@ export default function MonsterForm({ worldId, worldContext = '', onClose, onSav
       };
       await onSave(cleanedData);
     } catch (error) {
-      console.error('Failed to save monster:', error);
+  logger.error('Failed to save monster:', error);
     } finally {
       setLoading(false);
     }
@@ -90,7 +91,7 @@ export default function MonsterForm({ worldId, worldContext = '', onClose, onSav
       
       setFormData(prev => ({ ...prev, [field]: generatedContent }));
     } catch (error) {
-      console.error(`Failed to generate ${field}:`, error);
+  logger.error(`Failed to generate ${field}:`, error);
       setError(error instanceof Error ? error.message : `Failed to generate ${field}. Please try again.`);
     } finally {
       setLoading(false);

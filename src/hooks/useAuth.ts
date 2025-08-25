@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '../lib/logger';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
@@ -25,7 +26,7 @@ export function useAuth() {
       
       // Generate display name for new users if they don't have one
       if (session?.user && !session.user.user_metadata?.display_name && !session.user.user_metadata?.full_name) {
-        generateDisplayNameForNewUser(session.user);
+        generateDisplayNameForNewUser();
       }
     });
 
@@ -33,7 +34,7 @@ export function useAuth() {
   }, []);
 
   // Generate a mock display name for new users
-  const generateDisplayNameForNewUser = async (user: User) => {
+  const generateDisplayNameForNewUser = async () => {
     const adjectives = ['Brave', 'Wise', 'Swift', 'Noble', 'Clever', 'Bold', 'Keen', 'Bright'];
     const nouns = ['Explorer', 'Builder', 'Creator', 'Architect', 'Wanderer', 'Dreamer', 'Sage', 'Crafter'];
     const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
@@ -47,7 +48,7 @@ export function useAuth() {
         }
       });
     } catch (error) {
-      console.error('Failed to set initial display name:', error);
+      logger.error('Failed to set initial display name:', error);
     }
   };
 
@@ -85,6 +86,7 @@ export function useAuth() {
     user,
     session,
     loading,
+    signInWithGoogle,
     signInWithEmail,
     signUpWithEmail,
     signOut
